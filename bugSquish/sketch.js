@@ -66,8 +66,6 @@ function draw() {
       }
     });
   }
-
-  //text(bugs.length, 100, 100);
 }
 
 function mousePressed() {
