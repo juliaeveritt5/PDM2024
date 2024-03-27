@@ -8,6 +8,60 @@ let bugs = [];
 let bug;
 let numSquish = 0;
 
+let sequence, square;
+let melody = [
+  "D3",
+  "C4",
+  "B4",
+  "D4",
+  ["B4", "A4"],
+  "C4",
+  ["G4", "E4"],
+  "D3",
+  "D4",
+  ["C4", "B4"],
+  "A4",
+  "D3",
+  "F4",
+];
+
+let ending = ["B4", "A4", "C3", "F2"];
+
+square = new Tone.Synth({
+  oscillator: {
+    type: "square",
+  },
+  envelope: {
+    attack: 0.1,
+    decay: 0.1,
+    sustain: 1,
+    release: 0.1,
+  },
+}).toDestination();
+square.volume.value = -8;
+
+sequence = new Tone.Sequence(
+  function (time, note) {
+    square.triggerAttackRelease(note, 0.4);
+  },
+  melody,
+  "5n"
+);
+
+let end = new Tone.Sequence(
+  function (time, note) {
+    square.triggerAttackRelease(note, 1);
+  },
+  ending,
+  "3n"
+);
+
+let bpm = 130;
+Tone.Transport.start();
+Tone.Transport.bpm.value = bpm;
+
+const squishSound = new Tone.MembraneSynth().toDestination();
+
 function preload() {
   let animations = {
     stand: { row: 0, col: 0, frames: 1 },
@@ -34,9 +88,10 @@ function setup() {
 }
 
 function draw() {
-  background(220);
-
+  background("#E6FFE6");
   textSize(20);
+
+  sequence.start();
 
   if (time >= 0) {
     text("Time Remaining: " + ceil(time), 20, 25);
@@ -56,13 +111,21 @@ function draw() {
       }
     });
   } else {
-    text("GAME OVER", 20, 25);
-    text("Score: " + score, 20, 50);
+    sequence.stop();
+    end.loop = 1;
+    end.start();
+
+    textAlign(CENTER);
+    textSize(100);
+    text("GAME OVER", 400, 300);
+    text("Score: " + score, 400, 500);
     bugs.forEach((bug) => {
       if (!bug.squished) {
         bug.stand();
         bug.sprite.vel.y = 0;
         bug.squished = true;
+      } else if (bug.squished) {
+        bug.removeSprites();
       }
     });
   }
@@ -78,6 +141,7 @@ function mousePressed() {
       mouseY < bug.sprite.y + bug.sprite.height / 2
     ) {
       if (!bug.squished) {
+        squishSound.triggerAttackRelease("E3", "8n");
         bug.squish();
         bug.squished = true;
         score++;
@@ -108,6 +172,8 @@ function moreBugs() {
         animations
       )
     );
+    bpm += 5;
+    Tone.Transport.bpm.value = bpm;
   }
 }
 
